@@ -1,0 +1,86 @@
+/* Mobile first: map on top, panel below. Wide screens: map beside the panel. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1f2933;
+  background: #f7f7f5;
+}
+
+.layout { display: flex; flex-direction: column; }
+
+#map { height: 55vh; min-height: 280px; }
+
+.panel { padding: 16px; }
+
+h1 { margin: 0; font-size: 1.5rem; }
+h2 { margin: 16px 0 8px; font-size: 1.1rem; }
+.tagline { margin: 4px 0 0; color: #52606d; }
+
+#hint {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #7a4100;
+}
+#hint.attention { animation: attention 0.6s ease-in-out 2; }
+@keyframes attention { 50% { background: #ffd8a8; } }
+
+button, input { font: inherit; min-height: 44px; }
+
+button {
+  border: 1px solid #c7ccd1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 12px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.peserta-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.peserta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 2px solid #e4e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+.peserta.selected { border-color: #2a81cb; background: #eef6fd; }
+
+.pilih { min-width: 76px; }
+.pilih[aria-pressed="true"] { background: #2a81cb; border-color: #2a81cb; color: #fff; }
+
+.info { display: grid; gap: 2px; min-width: 0; }
+.info input {
+  width: 100%;
+  padding: 0 10px;
+  border: 1px solid #c7ccd1;
+  border-radius: 8px;
+}
+.status { font-size: 0.85rem; color: #52606d; }
+
+.hapus { min-width: 44px; padding: 0; }
+
+.tambah { margin-top: 12px; width: 100%; font-weight: 600; }
+
+/* Titik Tengah: a ring, clearly different from the blue Peserta pins. */
+.titik-tengah-icon {
+  border: 5px solid #fff;
+  border-radius: 50%;
+  background: #e4572e;
+  box-shadow: 0 0 0 3px #e4572e, 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.titik-tengah-label { font-weight: 700; color: #b03a15; }
+
+@media (min-width: 768px) {
+  .layout { flex-direction: row; height: 100vh; height: 100dvh; }
+  #map { flex: 1; height: auto; }
+  .panel { width: 380px; flex-shrink: 0; overflow-y: auto; }
+}
