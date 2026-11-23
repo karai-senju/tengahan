@@ -10,14 +10,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
 
-const hint = document.getElementById('hint');
-map.on('click', (e) => {
-  if (tapMap({ lat: e.latlng.lat, lon: e.latlng.lng })) return;
-  hint.textContent = 'Semua Peserta sudah punya Lokasi Rumah. Tekan "Pilih" pada salah satu Peserta dulu, lalu ketuk peta.';
-  hint.classList.remove('attention');
-  void hint.offsetWidth; // restart the CSS animation
-  hint.classList.add('attention');
-});
+map.on('click', (e) => tapMap({ lat: e.latlng.lat, lon: e.latlng.lng }));
 
 const titikTengahMarker = L.marker(JAKARTA, {
   icon: L.divIcon({ className: 'titik-tengah-icon', iconSize: [26, 26] }),

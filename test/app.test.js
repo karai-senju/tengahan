@@ -39,14 +39,31 @@ test('tapping the map fills the selected Peserta, then clears the selection', ()
   assert.equal(state().selectedId, null);
 });
 
-test('when every Peserta has a Lokasi Rumah and none is selected, a tap changes nothing', () => {
+test('tapTargetId is the Peserta the next map tap fills: the selected one, else the first without Lokasi Rumah', () => {
+  const app = createApp();
+  const state = watch(app);
+  const [first, second] = state().peserta.map((p) => p.id);
+  assert.equal(state().tapTargetId, first);
+  app.selectPeserta(second);
+  assert.equal(state().tapTargetId, second);
+  app.tapMap({ lat: -6.3, lon: 106.9 });
+  assert.equal(state().tapTargetId, first);
+  app.tapMap({ lat: -6.1, lon: 106.8 });
+  assert.equal(state().tapTargetId, null);
+});
+
+test('when every Peserta has a Lokasi Rumah and none is selected, a tap changes no Peserta and sets tapMissed until the next change', () => {
   const app = createApp();
   const state = watch(app);
   app.tapMap({ lat: -6.1, lon: 106.8 });
   app.tapMap({ lat: -6.3, lon: 106.8 });
+  assert.equal(state().tapMissed, false);
   const before = state().peserta;
   assert.equal(app.tapMap({ lat: -6.5, lon: 106.5 }), false);
   assert.deepEqual(state().peserta, before);
+  assert.equal(state().tapMissed, true);
+  app.selectPeserta(before[0].id);
+  assert.equal(state().tapMissed, false);
 });
 
 test('Peserta can be added up to 5 and removed down to 2', () => {

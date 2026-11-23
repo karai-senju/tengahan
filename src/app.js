@@ -11,14 +11,19 @@ export function createApp() {
     peserta: Array.from({ length: MIN_PESERTA }, newPeserta),
     selectedId: null,
     titikTengah: null,
+    tapTargetId: null, // Peserta the next map tap fills, or null when nobody can be filled
+    tapMissed: false, // true right after a map tap that had nobody to fill
   };
 
-  function update(peserta, selectedId = state.selectedId) {
+  function update(peserta, selectedId = state.selectedId, tapMissed = false) {
     state.peserta = peserta;
     state.selectedId = selectedId;
     state.titikTengah = titikTengah(peserta.map((p) => p.lokasiRumah).filter(Boolean));
+    state.tapTargetId = selectedId ?? peserta.find((p) => !p.lokasiRumah)?.id ?? null;
+    state.tapMissed = tapMissed;
     listeners.forEach((listener) => listener(state));
   }
+  update(state.peserta); // fill the derived fields; no listeners yet
 
   const patch = (id, fields) => state.peserta.map((p) => (p.id === id ? { ...p, ...fields } : p));
 
@@ -49,12 +54,14 @@ export function createApp() {
     update(state.peserta, id);
   }
 
-  // Map tap: fill the selected Peserta, otherwise the first one without a
-  // Lokasi Rumah. Returns false (and changes nothing) when there is nobody to fill.
+  // Map tap: fill the tapTargetId Peserta. Returns false, changes no Peserta
+  // and sets tapMissed when there is nobody to fill.
   function tapMap(lokasiRumah) {
-    const id = state.selectedId ?? state.peserta.find((p) => !p.lokasiRumah)?.id;
-    if (id == null) return false;
-    update(patch(id, { lokasiRumah }), null);
+    if (state.tapTargetId == null) {
+      update(state.peserta, state.selectedId, true);
+      return false;
+    }
+    update(patch(state.tapTargetId, { lokasiRumah }), null);
     return true;
   }
 

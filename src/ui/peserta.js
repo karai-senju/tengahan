@@ -59,9 +59,15 @@ onChange((state) => {
   });
   tambah.disabled = !canAddPeserta(count);
 
-  const nextIndex = state.peserta.findIndex((p) => (state.selectedId ? p.id === state.selectedId : !p.lokasiRumah));
+  const targetIndex = state.peserta.findIndex((p) => p.id === state.tapTargetId);
   hint.classList.remove('attention');
-  hint.textContent = nextIndex >= 0
-    ? `Ketuk peta untuk menaruh Lokasi Rumah ${namaPeserta(state.peserta[nextIndex].name, nextIndex)}.`
-    : 'Geser pin untuk memindah Lokasi Rumah, atau tekan "Pilih" lalu ketuk peta.';
+  if (state.tapMissed) {
+    hint.textContent = 'Semua Peserta sudah punya Lokasi Rumah. Tekan "Pilih" pada salah satu Peserta dulu, lalu ketuk peta.';
+    void hint.offsetWidth; // restart the CSS animation
+    hint.classList.add('attention');
+  } else {
+    hint.textContent = targetIndex >= 0
+      ? `Ketuk peta untuk menaruh Lokasi Rumah ${namaPeserta(state.peserta[targetIndex].name, targetIndex)}.`
+      : 'Geser pin untuk memindah Lokasi Rumah, atau tekan "Pilih" lalu ketuk peta.';
+  }
 });
