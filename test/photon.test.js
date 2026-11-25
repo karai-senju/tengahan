@@ -12,6 +12,7 @@ test('searchAddress sends a Jakarta-biased request and parses places', async () 
   const r = await searchAddress('Kemang Raya', { fetch: async (u) => { url = new URL(u); return ok(fixture('photon-search.json'))(); } });
   assert.equal(url.searchParams.get('q'), 'Kemang Raya');
   assert.equal(url.searchParams.get('limit'), '5');
+  assert.equal(url.searchParams.get('location_bias_scale'), '0.1');
   assert.ok(Math.abs(url.searchParams.get('lat') - -6.2) < 0.1);
   assert.ok(Math.abs(url.searchParams.get('lon') - 106.8) < 0.1);
   assert.equal(r.ok, true);

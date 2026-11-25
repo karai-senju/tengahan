@@ -30,7 +30,7 @@ async function get(url, fetchFn, signal) {
 }
 
 export async function searchAddress(query, { fetch: fetchFn = globalThis.fetch, signal, bias = JAKARTA, limit = 5 } = {}) {
-  const q = new URLSearchParams({ q: query, limit, lat: bias.lat, lon: bias.lon });
+  const q = new URLSearchParams({ q: query, limit, lat: bias.lat, lon: bias.lon, location_bias_scale: 0.1 });
   const r = await get(`${BASE}/api/?${q}`, fetchFn, signal);
   return r.ok ? { ok: true, results: r.features.map(toPlace).filter((p) => p.label) } : r;
 }
