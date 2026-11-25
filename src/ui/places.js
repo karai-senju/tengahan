@@ -8,6 +8,7 @@ const DEBOUNCE_MS = 800; // search once the Titik Tengah settles, not on every d
 const PAUSE_MS = 30000; // Overpass policy: wait 30 s after the server says it is busy
 const MAX_SHOWN = 50; // ponytail: only the 50 nearest are shown; add paging if people want more
 
+const MENCARI = 'Mencari tempat nongkrong…';
 const JENIS = { cafe: 'Kafe', restaurant: 'Restoran' };
 const PESAN_ERROR = {
   offline: 'Tidak ada koneksi internet. Periksa koneksimu lalu coba lagi.',
@@ -61,8 +62,6 @@ async function search() {
   inFlight = true;
   const mine = seq;
   const at = titik;
-  clear();
-  show('Mencari tempat nongkrong…', { loading: true });
   const result = await cariTempatNongkrong(at);
   inFlight = false;
   if (!result.ok && result.error === 'busy') pausedUntil = Date.now() + PAUSE_MS;
@@ -142,7 +141,8 @@ function highlight(id) {
 }
 
 cobaLagi.addEventListener('click', () => {
-  show('Mencari tempat nongkrong…', { loading: true });
+  const wait = Math.ceil((pausedUntil - Date.now()) / 1000);
+  show(wait > 0 ? `Layanan peta masih sibuk. Mencoba lagi dalam ${wait} detik…` : MENCARI, { loading: true });
   schedule(0);
 });
 
@@ -154,9 +154,10 @@ onChange((state) => {
   titik = t;
   seq++;
   clearTimeout(timer);
+  clear(); // the old list's distances no longer match the new Titik Tengah
   if (!t) {
-    clear();
     return show('Pasang Lokasi Rumah minimal 2 Peserta untuk melihat Tempat Nongkrong di sekitar Titik Tengah.');
   }
+  show(MENCARI, { loading: true });
   schedule(DEBOUNCE_MS);
 });

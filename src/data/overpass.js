@@ -9,6 +9,9 @@ export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 // Radius Pencarian steps in km: start at 2, widen when nothing is found.
 export const RADIUS_KM = [2, 5, 10];
 
+// Give up on a stalled request (the query itself declares a 25 s server timeout).
+const TIMEOUT_MS = 30000;
+
 // Only cafes and restaurants (malls are never asked for). nwr + out center also
 // returns cafes mapped as building outlines, with a center point.
 export function buildQuery({ lat, lon }, radiusKm) {
@@ -17,9 +20,9 @@ export function buildQuery({ lat, lon }, radiusKm) {
 
 function parse(elements) {
   return elements.flatMap((el) => {
-    const name = el.tags?.name?.trim();
-    const lat = el.lat ?? el.center?.lat;
-    const lon = el.lon ?? el.center?.lon;
+    const name = el?.tags?.name?.trim();
+    const lat = el?.lat ?? el?.center?.lat;
+    const lon = el?.lon ?? el?.center?.lon;
     if (!name || lat == null || lon == null) return [];
     return [{ id: `${el.type}/${el.id}`, name, lat, lon, type: el.tags.amenity }];
   });
@@ -33,9 +36,10 @@ export async function cariTempat(titik, radiusKm, { fetch: fetchFn = globalThis.
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `data=${encodeURIComponent(buildQuery(titik, radiusKm))}`,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch {
-    return { ok: false, error: 'offline' };
+  } catch (e) {
+    return { ok: false, error: e?.name === 'TimeoutError' ? 'busy' : 'offline' };
   }
   if (res.status === 429 || res.status >= 500) return { ok: false, error: 'busy' };
   if (!res.ok) return { ok: false, error: 'failed' };

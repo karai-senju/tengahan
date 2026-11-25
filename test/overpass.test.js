@@ -65,6 +65,9 @@ test('errors resolve to {ok: false, error} and stop the widening', async () => {
   assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: status(400) }), { ok: false, error: 'failed' });
   const badJson = async () => ({ ok: true, status: 200, json: async () => { throw new SyntaxError('bad'); } });
   assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: badJson }), { ok: false, error: 'failed' });
+  const stalled = async () => { throw new DOMException('The operation timed out.', 'TimeoutError'); };
+  assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: stalled }), { ok: false, error: 'busy' });
+  assert.deepEqual(await cariTempat(BLOK_M, 2, { fetch: fakeFetch({ elements: [null] }) }), { ok: true, places: [] });
   const timedOut = fakeFetch(fixture('overpass-timeout.json'));
   assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: timedOut }), { ok: false, error: 'busy' });
   assert.equal(timedOut.queries.length, 1, 'a timed-out query must not count as empty and widen');
