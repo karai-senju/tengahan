@@ -18,6 +18,12 @@ npm test
 
 This runs Node's built-in `node --test` (Node 18 or newer). It needs no `npm install`.
 
+## Public address and deployment
+
+- Public address: https://karai-senju.github.io/tengahan/
+- Deployment: GitHub Pages, "Deploy from a branch", source `main` branch, `/` (root) folder. The empty `.nojekyll` file at the root tells Pages to skip Jekyll. Every merge to `main` republishes the site, which may take a minute.
+- CI: the workflow `.github/workflows/ci.yml` runs `npm test` on every pull request.
+
 ## Layout
 
 - `index.html` loads Leaflet from a CDN (pinned version with SRI) and one `<script type="module">` per feature. Asset paths are relative, so the site also works under `/tengahan/` on GitHub Pages.
