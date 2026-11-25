@@ -1,5 +1,6 @@
 // Address search, "Pakai lokasi saya" and reverse lookup, added to each Peserta row.
 import { onChange, setLokasiRumah } from '../app.js';
+import { namaPeserta } from '../core.js';
 import { searchAddress, reverseAddress } from '../data/photon.js';
 
 const MIN_CHARS = 3;
@@ -100,7 +101,7 @@ function reverse(id, loc) {
     const row = rows.get(id);
     if (abort.signal.aborted || !row) return;
     row.input.value = r.ok ? r.label : '';
-    row.input.placeholder = r.ok ? '' : `Alamat tidak ditemukan (${ERRORS[r.error]})`;
+    row.pesan.textContent = r.ok ? '' : ERRORS[r.error];
     row.saran.replaceChildren();
   }, DEBOUNCE_MS));
 }
@@ -112,7 +113,8 @@ onChange((state) => {
   state.peserta.forEach((p, i) => {
     const li = list.children[i];
     if (!li) return; // peserta.js has not drawn this row yet
-    if (!rows.has(p.id)) addRow(p.id, li);
+    const row = rows.get(p.id) ?? addRow(p.id, li);
+    row.input.setAttribute('aria-label', `Alamat ${namaPeserta(p.name, i)}`);
     if (p.lokasiRumah && !same(p.lokasiRumah, known.get(p.id))) {
       known.set(p.id, p.lokasiRumah);
       reverse(p.id, p.lokasiRumah);

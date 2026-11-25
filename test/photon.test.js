@@ -21,7 +21,9 @@ test('searchAddress sends a Jakarta-biased request and parses places', async () 
     lat: -6.2615,
     lon: 106.8133,
   });
-  assert.equal(r.results.length, 2); // the feature without a name or address is dropped
+  // the feature without a name or address is dropped, and so is the repeated label
+  assert.equal(r.results.length, 2);
+  assert.equal(new Set(r.results.map((x) => x.label)).size, 2);
 });
 
 test('reverseAddress returns a label for the point', async () => {

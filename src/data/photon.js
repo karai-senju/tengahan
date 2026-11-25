@@ -32,7 +32,10 @@ async function get(url, fetchFn, signal) {
 export async function searchAddress(query, { fetch: fetchFn = globalThis.fetch, signal, bias = JAKARTA, limit = 5 } = {}) {
   const q = new URLSearchParams({ q: query, limit, lat: bias.lat, lon: bias.lon, location_bias_scale: 0.1 });
   const r = await get(`${BASE}/api/?${q}`, fetchFn, signal);
-  return r.ok ? { ok: true, results: r.features.map(toPlace).filter((p) => p.label) } : r;
+  if (!r.ok) return r;
+  const seen = new Set(); // the same road can come back as several OSM segments
+  const results = r.features.map(toPlace).filter((p) => p.label && !seen.has(p.label) && seen.add(p.label));
+  return { ok: true, results };
 }
 
 export async function reverseAddress({ lat, lon }, { fetch: fetchFn = globalThis.fetch, signal } = {}) {
