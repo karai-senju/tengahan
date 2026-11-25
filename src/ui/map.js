@@ -4,13 +4,18 @@ import { namaPeserta } from '../core.js';
 
 const JAKARTA = [-6.2, 106.8166];
 
-const map = L.map('map').setView(JAKARTA, 12);
+// A double tap fires click, click, dblclick: zoom is off and the 2nd click is ignored
+// (detail > 1), so one double tap fills one Peserta, not two.
+const map = L.map('map', { doubleClickZoom: false }).setView(JAKARTA, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
 
-map.on('click', (e) => tapMap({ lat: e.latlng.lat, lon: e.latlng.lng }));
+map.on('click', (e) => {
+  if (e.originalEvent.detail > 1) return;
+  tapMap({ lat: e.latlng.lat, lon: e.latlng.lng });
+});
 
 const titikTengahMarker = L.marker(JAKARTA, {
   icon: L.divIcon({ className: 'titik-tengah-icon', iconSize: [26, 26] }),
