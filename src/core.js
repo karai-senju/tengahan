@@ -30,3 +30,10 @@ export const canRemovePeserta = (count) => count > MIN_PESERTA;
 
 // Display name of the Peserta at 0-based `index`: their name, or "Orang N".
 export const namaPeserta = (name, index) => name?.trim() || `Orang ${index + 1}`;
+
+// Tempat Nongkrong with `jarakKm` from the Titik Tengah added, nearest first.
+export const urutkanMenurutJarak = (places, titik) =>
+  places.map((p) => ({ ...p, jarakKm: haversineKm(titik, p) })).sort((a, b) => a.jarakKm - b.jarakKm);
+
+// Plain Google Maps link to a point (no API key).
+export const googleMapsUrl = ({ lat, lon }) => `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;

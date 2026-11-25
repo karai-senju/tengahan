@@ -6,7 +6,7 @@ const JAKARTA = [-6.2, 106.8166];
 
 // A double tap fires click, click, dblclick: zoom is off and the 2nd click is ignored
 // (detail > 1), so one double tap fills one Peserta, not two.
-const map = L.map('map', { doubleClickZoom: false }).setView(JAKARTA, 12);
+export const map = L.map('map', { doubleClickZoom: false }).setView(JAKARTA, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

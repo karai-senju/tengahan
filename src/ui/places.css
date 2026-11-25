@@ -1,0 +1,52 @@
+/* Tempat Nongkrong list (src/ui/places.js). */
+.places-status { margin: 0 0 8px; color: #52606d; }
+.places-status.loading::before {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 8px;
+  vertical-align: -0.1em;
+  border: 2px solid #c7ccd1;
+  border-top-color: #2a81cb;
+  border-radius: 50%;
+  animation: places-spin 0.8s linear infinite;
+}
+@keyframes places-spin { to { transform: rotate(360deg); } }
+
+.coba-lagi { margin-bottom: 8px; font-weight: 600; }
+
+.places-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.place {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px 4px 4px;
+  border: 2px solid #e4e7eb;
+  border-left: 6px solid #2f7d4f;
+  border-radius: 10px;
+  background: #fff;
+}
+.place.cafe { border-left-color: #8a4f1d; }
+.place.active { border-color: #1f2933; background: #f0f4f8; }
+
+.place-pilih {
+  display: grid;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.place-nama { font-weight: 600; overflow-wrap: anywhere; }
+.place-info { font-size: 0.85rem; color: #52606d; }
+
+.gmaps {
+  font-size: 0.85rem;
+  color: #1a5fa0;
+  text-align: right;
+  max-width: 7.5em;
+  padding: 4px 0;
+}

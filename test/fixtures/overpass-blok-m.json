@@ -1,0 +1,45 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.7 375dc00a",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-25T03:00:00Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": -6.2448,
+      "lon": 106.7990,
+      "tags": { "amenity": "cafe", "name": "Kopi Taman Literasi", "cuisine": "coffee_shop" }
+    },
+    {
+      "type": "node",
+      "id": 1002,
+      "lat": -6.2431,
+      "lon": 106.7975,
+      "tags": { "amenity": "restaurant", "name": "Sate Blok M", "cuisine": "indonesian" }
+    },
+    {
+      "type": "way",
+      "id": 2001,
+      "center": { "lat": -6.2460, "lon": 106.8001 },
+      "nodes": [3001, 3002, 3003, 3004, 3001],
+      "tags": { "amenity": "cafe", "building": "yes", "name": "Rumah Kopi Melawai" }
+    },
+    {
+      "type": "node",
+      "id": 1003,
+      "lat": -6.2440,
+      "lon": 106.7984,
+      "tags": { "amenity": "cafe" }
+    },
+    {
+      "type": "node",
+      "id": 1004,
+      "lat": -6.2452,
+      "lon": 106.7969,
+      "tags": { "amenity": "restaurant", "name": "   " }
+    }
+  ]
+}
