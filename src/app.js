@@ -1,9 +1,10 @@
 // App state: the Peserta list, the selected Peserta and the Titik Tengah. No DOM.
 // Features subscribe with onChange(listener); listeners get the current state
 // right away and after every change. Treat the state as read-only.
-import { FILTER_TYPE, MIN_PESERTA, canAddPeserta, canRemovePeserta, titikTengah } from './core.js';
+import { FILTER_TYPE, bacaLinkBagikan, MIN_PESERTA, canAddPeserta, canRemovePeserta, titikTengah } from './core.js';
 
-export function createApp() {
+// `shared`: a decoded Link Bagikan ({titikTengah, filter}) starts a read-only view with no Peserta.
+export function createApp(shared = null) {
   let nextId = 1;
   const newPeserta = () => ({ id: nextId++, name: '', lokasiRumah: null });
   const listeners = [];
@@ -14,9 +15,11 @@ export function createApp() {
     tapTargetId: null, // Peserta the next map tap fills, or null when nobody can be filled
     filter: 'semua', // Tempat Nongkrong filter: 'semua' | 'kafe' | 'restoran'
     tapMissed: false, // true right after a map tap that had nobody to fill
+    readOnly: Boolean(shared), // Link Bagikan view: Titik Tengah and filter only, nothing can change it
   };
 
   function update(peserta, selectedId = state.selectedId, tapMissed = false) {
+    if (state.readOnly) return;
     state.peserta = peserta;
     state.selectedId = selectedId;
     state.titikTengah = titikTengah(peserta.map((p) => p.lokasiRumah).filter(Boolean));
@@ -25,6 +28,7 @@ export function createApp() {
     listeners.forEach((listener) => listener(state));
   }
   update(state.peserta); // fill the derived fields; no listeners yet
+  if (shared) Object.assign(state, { peserta: [], titikTengah: shared.titikTengah, filter: shared.filter });
 
   const patch = (id, fields) => state.peserta.map((p) => (p.id === id ? { ...p, ...fields } : p));
 
@@ -75,4 +79,7 @@ export function createApp() {
   return { onChange, setFilter, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap };
 }
 
-export const { onChange, setFilter, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap } = createApp();
+// The page's own state: a valid Link Bagikan in the URL hash opens read-only.
+const link = bacaLinkBagikan(globalThis.location?.hash);
+export const linkRusak = link?.ok === false;
+export const { onChange, setFilter, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap } = createApp(link?.ok ? link : null);
