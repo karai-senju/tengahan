@@ -1,0 +1,6 @@
+{"type":"FeatureCollection","features":[
+{"type":"Feature","geometry":{"type":"Point","coordinates":[106.8133,-6.2615]},"properties":{"name":"Kemang Raya","street":"Jalan Kemang Raya","district":"Bangka","city":"Jakarta Selatan","state":"Daerah Khusus Ibukota Jakarta"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[106.8140,-6.2620]},"properties":{"name":"Kemang Raya","street":"Jalan Kemang Raya","district":"Bangka","city":"Jakarta Selatan","state":"Daerah Khusus Ibukota Jakarta"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[106.8171,-6.2698]},"properties":{"name":"Kemang Raya","city":"Jakarta Selatan","state":"Daerah Khusus Ibukota Jakarta"}},
+{"type":"Feature","geometry":{"type":"Point","coordinates":[106.9,-6.3]},"properties":{}}
+]}
