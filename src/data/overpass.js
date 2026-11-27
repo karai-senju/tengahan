@@ -1,21 +1,27 @@
 // Tempat Nongkrong from the Overpass API (OpenStreetMap). Never throws: resolves to
 // {ok: true, ...} or {ok: false, error: 'offline' | 'busy' | 'failed'}.
-// Usage policy (re-checked 2026-11-25): keep requests few and one at a time, declare a
-// timeout, and pause 30 s after a 429/504. The pause lives in src/ui/places.js.
-// ponytail: the public overpass-api.de instance counts every visitor together; move to a
-// self-hosted or paid instance if the site gets popular (see spec #1, Further Notes).
-export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+// Usage policy (re-checked 2026-11-27): keep requests few and one at a time,
+// declare timeout, and pause 30 s after 429/504. pause lives in src/ui/places.js.
+// Public instances, main first. Kept only if browsers may call them from another
+// site (Access-Control-Allow-Origin) and policy allows light use. A busy one hands
+// over to the next. ponytail: public instances count visitors together; move to
+// self-hosted or paid instance if site gets popular (see spec #1, Further Notes).
+export const OVERPASS_INSTANCES = [
+  'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
+// Worst case with every instance stalled: TIMEOUT_MS x instances = 40 s (< 45 s).
+const TIMEOUT_MS = 20000;
+// Instance that answered last, tried first next time (memory only).
+let lastGood = 0;
 
 // Radius Pencarian steps in km: start at 2, widen when nothing is found.
 export const RADIUS_KM = [2, 5, 10];
 
-// Give up on a stalled request (the query itself declares a 25 s server timeout).
-const TIMEOUT_MS = 30000;
-
 // Only cafes and restaurants (malls are never asked for). nwr + out center also
 // returns cafes mapped as building outlines, with a center point.
 export function buildQuery({ lat, lon }, radiusKm) {
-  return `[out:json][timeout:25];nwr(around:${radiusKm * 1000},${lat},${lon})[amenity~"^(cafe|restaurant)$"][name];out center;`;
+  return `[out:json][timeout:18];nwr(around:${radiusKm * 1000},${lat},${lon})[amenity~"^(cafe|restaurant)$"][name];out center;`;
 }
 
 function parse(elements) {
@@ -28,11 +34,11 @@ function parse(elements) {
   });
 }
 
-// One query at one radius → {ok: true, places: [{id, name, lat, lon, type}]}.
-export async function cariTempat(titik, radiusKm, { fetch: fetchFn = globalThis.fetch } = {}) {
+// One query at one instance → {ok: true, places: [...]} or {ok: false, error}.
+async function tanya(url, titik, radiusKm, fetchFn) {
   let res;
   try {
-    res = await fetchFn(OVERPASS_URL, {
+    res = await fetchFn(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `data=${encodeURIComponent(buildQuery(titik, radiusKm))}`,
@@ -53,6 +59,25 @@ export async function cariTempat(titik, radiusKm, { fetch: fetchFn = globalThis.
   if (/runtime error|timed out|out of memory/i.test(json?.remark ?? '')) return { ok: false, error: 'busy' };
   if (!Array.isArray(json?.elements)) return { ok: false, error: 'failed' };
   return { ok: true, places: parse(json.elements) };
+}
+
+// One query at one radius, instances one after another. Busy → next instance;
+// failed (bad data) stops; offline tries just one more instance, so no internet
+// doesn't wait for all. → {ok: true, places: [{id, name, lat, lon, type}]}.
+export async function cariTempat(titik, radiusKm, { fetch: fetchFn = globalThis.fetch } = {}) {
+  const n = OVERPASS_INSTANCES.length;
+  let offline = 0;
+  let result;
+  for (let i = 0; i < n; i++) {
+    const idx = (lastGood + i) % n;
+    result = await tanya(OVERPASS_INSTANCES[idx], titik, radiusKm, fetchFn);
+    if (result.ok) {
+      lastGood = idx;
+      return result;
+    }
+    if (result.error === 'failed' || (result.error === 'offline' && ++offline === 2)) break;
+  }
+  return result;
 }
 
 // Radius Pencarian loop: 2 → 5 → 10 km, one request at a time, stop at the first

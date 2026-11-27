@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildQuery, cariTempat, cariTempatNongkrong } from '../src/data/overpass.js';
+import { OVERPASS_INSTANCES, buildQuery, cariTempat, cariTempatNongkrong } from '../src/data/overpass.js';
 import { urutkanMenurutJarak, googleMapsUrl } from '../src/core.js';
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url)));
@@ -68,9 +68,71 @@ test('errors resolve to {ok: false, error} and stop the widening', async () => {
   const stalled = async () => { throw new DOMException('The operation timed out.', 'TimeoutError'); };
   assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: stalled }), { ok: false, error: 'busy' });
   assert.deepEqual(await cariTempat(BLOK_M, 2, { fetch: fakeFetch({ elements: [null] }) }), { ok: true, places: [] });
-  const timedOut = fakeFetch(fixture('overpass-timeout.json'));
+  const timedOut = fakeFetch(...OVERPASS_INSTANCES.map(() => fixture('overpass-timeout.json')));
   assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch: timedOut }), { ok: false, error: 'busy' });
-  assert.equal(timedOut.queries.length, 1, 'a timed-out query must not count as empty and widen');
+  assert.equal(new Set(timedOut.radii()).size, 1, 'a timed-out query must not count as empty and widen');
+});
+
+// Fake fetch per instance: `handlers[i]` answers the i-th OVERPASS_INSTANCES url.
+// Records call order and asserts no two requests overlap.
+function perInstance(...handlers) {
+  const calls = [];
+  let busy = false;
+  const fn = async (url) => {
+    assert.ok(!busy, 'requests must be sequential');
+    busy = true;
+    calls.push(OVERPASS_INSTANCES.indexOf(url));
+    await new Promise((r) => setImmediate(r));
+    busy = false;
+    return handlers[OVERPASS_INSTANCES.indexOf(url)]();
+  };
+  fn.calls = calls;
+  return fn;
+}
+const ok = (name) => async () => ({ ok: true, status: 200, json: async () => fixture(name) });
+const down = async () => { throw new TypeError('Failed to fetch'); };
+// Makes instance 0 the remembered one (it answers; others 502).
+const resetKeInstansiUtama = () => cariTempat(BLOK_M, 2, { fetch: perInstance(ok('overpass-blok-m.json'), status(502)) });
+
+test('busy instance hands over to the next one', async () => {
+  await resetKeInstansiUtama();
+  const fetch = perInstance(status(502), ok('overpass-blok-m.json'));
+  const result = await cariTempatNongkrong(BLOK_M, { fetch });
+  assert.equal(result.ok, true);
+  assert.equal(result.places.length, 3);
+  assert.equal(result.radiusKm, 2);
+  assert.deepEqual(fetch.calls, [0, 1]);
+});
+
+test('every instance busy → busy, one after another, worst case under 45 s', async () => {
+  await resetKeInstansiUtama();
+  const fetch = perInstance(status(504), status(429));
+  assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch }), { ok: false, error: 'busy' });
+  assert.deepEqual(fetch.calls, [0, 1]);
+  const timeout = Number(readFileSync(new URL('../src/data/overpass.js', import.meta.url), 'utf8').match(/TIMEOUT_MS = (\d+)/)[1]);
+  assert.ok(timeout * OVERPASS_INSTANCES.length < 45000);
+});
+
+test('failed (bad data) does not try further instances', async () => {
+  await resetKeInstansiUtama();
+  const fetch = perInstance(async () => ({ ok: true, status: 200, json: async () => ({}) }), ok('overpass-blok-m.json'));
+  assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch }), { ok: false, error: 'failed' });
+  assert.deepEqual(fetch.calls, [0]);
+});
+
+test('offline tries one more instance only, then gives up', async () => {
+  await resetKeInstansiUtama();
+  const fetch = perInstance(down, down);
+  assert.deepEqual(await cariTempatNongkrong(BLOK_M, { fetch }), { ok: false, error: 'offline' });
+  assert.deepEqual(fetch.calls, [0, 1]);
+});
+
+test('the instance that answered last is tried first next time', async () => {
+  await resetKeInstansiUtama();
+  await cariTempat(BLOK_M, 2, { fetch: perInstance(status(502), ok('overpass-blok-m.json')) });
+  const fetch = perInstance(ok('overpass-blok-m.json'), ok('overpass-blok-m.json'));
+  await cariTempat(BLOK_M, 2, { fetch });
+  assert.deepEqual(fetch.calls, [1]);
 });
 
 test('core: Tempat Nongkrong sorted nearest first, with jarakKm from the Titik Tengah', () => {
