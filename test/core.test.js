@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta, waktuTempuhMenit, filterTempat, ROAD_FACTOR, SPEED_KMH } from '../src/core.js';
+import { titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta, waktuTempuhMenit, teksWaktuTempuh, filterTempat, ROAD_FACTOR, SPEED_KMH } from '../src/core.js';
 
 test('Titik Tengah of 2 Lokasi Rumah is the average of their lat and lon', () => {
   const tt = titikTengah([{ lat: -6.1, lon: 106.8 }, { lat: -6.3, lon: 106.9 }]);
@@ -77,4 +77,10 @@ test('filterTempat keeps all, only cafes, or only restaurants', () => {
   assert.deepEqual(filterTempat(places, 'semua').map((p) => p.id), [1, 2, 3]);
   assert.deepEqual(filterTempat(places, 'kafe').map((p) => p.id), [1, 3]);
   assert.deepEqual(filterTempat(places, 'restoran').map((p) => p.id), [2]);
+});
+
+test('teksWaktuTempuh shows "< 1 menit" for 0 and "± N menit" otherwise', () => {
+  assert.equal(teksWaktuTempuh(0), '< 1 menit');
+  assert.equal(teksWaktuTempuh(1), '± 1 menit');
+  assert.equal(teksWaktuTempuh(35), '± 35 menit');
 });

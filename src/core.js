@@ -50,3 +50,6 @@ export const FILTER_TYPE = { semua: null, kafe: 'cafe', restoran: 'restaurant' }
 
 export const filterTempat = (places, filter) =>
   FILTER_TYPE[filter] ? places.filter((p) => p.type === FILTER_TYPE[filter]) : places;
+
+// Display text for a travel time in whole minutes: "± 12 menit", or "< 1 menit" for 0.
+export const teksWaktuTempuh = (menit) => (menit < 1 ? '< 1 menit' : `± ${menit} menit`);

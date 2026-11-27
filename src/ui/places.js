@@ -1,6 +1,6 @@
 // Tempat Nongkrong around the Titik Tengah: list in #places plus map markers, kept in sync.
 import { onChange, setFilter } from '../app.js';
-import { urutkanMenurutJarak, googleMapsUrl, filterTempat, waktuTempuhMenit, namaPeserta } from '../core.js';
+import { urutkanMenurutJarak, googleMapsUrl, filterTempat, waktuTempuhMenit, teksWaktuTempuh, namaPeserta } from '../core.js';
 import { cariTempatNongkrong, RADIUS_KM } from '../data/overpass.js';
 import { map } from './map.js';
 
@@ -130,7 +130,7 @@ function addPlace(p) {
   state.peserta.forEach((ps, i) => {
     if (!ps.lokasiRumah) return;
     waktu.append(Object.assign(document.createElement('li'), {
-      textContent: `${namaPeserta(ps.name, i)}: ± ${waktuTempuhMenit(ps.lokasiRumah, p)} menit`,
+      textContent: `${namaPeserta(ps.name, i)}: ${teksWaktuTempuh(waktuTempuhMenit(ps.lokasiRumah, p))}`,
     }));
   });
   li.append(pilih, gmaps, waktu);
