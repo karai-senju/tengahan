@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta, waktuTempuhMenit, teksWaktuTempuh, filterTempat, ROAD_FACTOR, SPEED_KMH } from '../src/core.js';
+import { buatLinkBagikan, bacaLinkBagikan, titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta, waktuTempuhMenit, teksWaktuTempuh, filterTempat, ROAD_FACTOR, SPEED_KMH } from '../src/core.js';
 
 test('Titik Tengah of 2 Lokasi Rumah is the average of their lat and lon', () => {
   const tt = titikTengah([{ lat: -6.1, lon: 106.8 }, { lat: -6.3, lon: 106.9 }]);
@@ -83,4 +83,39 @@ test('teksWaktuTempuh shows "< 1 menit" for 0 and "± N menit" otherwise', () =>
   assert.equal(teksWaktuTempuh(0), '< 1 menit');
   assert.equal(teksWaktuTempuh(1), '± 1 menit');
   assert.equal(teksWaktuTempuh(35), '± 35 menit');
+});
+
+const BASE = 'https://karai-senju.github.io/tengahan/';
+
+test('Link Bagikan round-trips the Titik Tengah (5 decimals) and the filter', () => {
+  const link = buatLinkBagikan(BASE, { lat: -6.2088123456, lon: 106.8456789 }, 'kafe');
+  assert.equal(link, `${BASE}#v=1&t=-6.20881,106.84568&f=kafe`);
+  assert.deepEqual(bacaLinkBagikan(new URL(link).hash), { ok: true, titikTengah: { lat: -6.20881, lon: 106.84568 }, filter: 'kafe' });
+});
+
+test('buatLinkBagikan replaces an old hash and falls back to "semua" for an unknown filter', () => {
+  assert.equal(buatLinkBagikan(`${BASE}#v=1&t=1,2&f=kafe`, { lat: 1, lon: 2 }, 'mall'), `${BASE}#v=1&t=1.00000,2.00000&f=semua`);
+});
+
+test('a Link Bagikan never contains a Lokasi Rumah coordinate or a Peserta name', () => {
+  const peserta = [
+    { name: 'Budi', lokasiRumah: { lat: -6.1111111, lon: 106.7222222 } },
+    { name: 'Sari', lokasiRumah: { lat: -6.3333333, lon: 106.9444444 } },
+  ];
+  const link = buatLinkBagikan(BASE, titikTengah(peserta.map((p) => p.lokasiRumah)), 'semua');
+  for (const { name, lokasiRumah } of peserta) {
+    assert.ok(!link.includes(name));
+    for (const v of [lokasiRumah.lat, lokasiRumah.lon]) {
+      assert.ok(!link.includes(String(v)) && !link.includes(v.toFixed(5)) && !link.includes(v.toFixed(2)));
+    }
+  }
+});
+
+test('bacaLinkBagikan: empty hash is null, a lost filter becomes "semua", malformed links are not ok', () => {
+  assert.equal(bacaLinkBagikan(''), null);
+  assert.equal(bacaLinkBagikan('#'), null);
+  assert.equal(bacaLinkBagikan('#v=1&t=-6.2,106.8').filter, 'semua');
+  for (const bad of ['#abc', '#v=2&t=-6.2,106.8&f=kafe', '#v=1&t=-6.2&f=kafe', '#v=1&t=abc,def', '#v=1&t=91,106.8', '#v=1&t=-6.2,181', '#v=1&t=1e2,3', '#v=1']) {
+    assert.deepEqual(bacaLinkBagikan(bad), { ok: false }, bad);
+  }
 });

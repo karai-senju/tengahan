@@ -105,3 +105,12 @@ test('the filter starts at "semua", changes through setFilter and ignores unknow
   app.setFilter('mall');
   assert.equal(state().filter, 'kafe');
 });
+
+test('an app opened from a Link Bagikan is read-only: Titik Tengah and filter only, taps change nothing', () => {
+  const app = createApp({ titikTengah: { lat: -6.2, lon: 106.8 }, filter: 'kafe' });
+  const state = watch(app);
+  assert.deepEqual([state().readOnly, state().filter, state().titikTengah, state().peserta], [true, 'kafe', { lat: -6.2, lon: 106.8 }, []]);
+  assert.equal(app.tapMap({ lat: -6.5, lon: 106.9 }), false);
+  app.setFilter('restoran');
+  assert.deepEqual([state().filter, state().titikTengah], ['restoran', { lat: -6.2, lon: 106.8 }]);
+});

@@ -53,3 +53,20 @@ export const filterTempat = (places, filter) =>
 
 // Display text for a travel time in whole minutes: "± 12 menit", or "< 1 menit" for 0.
 export const teksWaktuTempuh = (menit) => (menit < 1 ? '< 1 menit' : `± ${menit} menit`);
+
+// Link Bagikan: only the Titik Tengah and the filter, in the URL hash, e.g. "#v=1&t=-6.20000,106.81660&f=kafe".
+// Format is frozen (docs/adr/0001-link-bagikan-format.md); never add Lokasi Rumah or Peserta names.
+const KOORDINAT = 5; // decimals, ~1 m
+export const buatLinkBagikan = (baseUrl, titik, filter) =>
+  `${baseUrl.split('#')[0]}#v=1&t=${titik.lat.toFixed(KOORDINAT)},${titik.lon.toFixed(KOORDINAT)}&f=${filter in FILTER_TYPE ? filter : 'semua'}`;
+
+// Reads a location hash: null when empty, {ok: false} when malformed, else {ok: true, titikTengah, filter}.
+export function bacaLinkBagikan(hash) {
+  const text = (hash ?? '').replace(/^#/, '');
+  if (!text) return null;
+  const params = new URLSearchParams(text);
+  const [lat, lon] = (params.get('t') ?? '').split(',').map((s) => (/^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN));
+  if (params.get('v') !== '1' || !(Math.abs(lat) <= 90) || !(Math.abs(lon) <= 180)) return { ok: false };
+  const filter = params.get('f');
+  return { ok: true, titikTengah: { lat, lon }, filter: filter in FILTER_TYPE ? filter : 'semua' };
+}

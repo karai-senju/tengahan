@@ -68,3 +68,13 @@
   color: #323f4b;
 }
 .place-waktu li { overflow-wrap: anywhere; }
+
+/* Bagikan button and the read-only Link Bagikan view */
+#bagikan { margin-top: 16px; }
+.bagikan-tombol { width: 100%; font-weight: 600; }
+.bagikan-info { margin: 8px 0 0; color: #52606d; }
+.bagikan-info:empty { display: none; }
+.bagikan-link { width: 100%; margin-top: 8px; padding: 0 8px; }
+body.readonly #hint,
+body.readonly [aria-labelledby="peserta-judul"],
+body.readonly .waktu-catatan { display: none; }
