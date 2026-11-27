@@ -1,6 +1,6 @@
 // Tempat Nongkrong around the Titik Tengah: list in #places plus map markers, kept in sync.
-import { onChange } from '../app.js';
-import { urutkanMenurutJarak, googleMapsUrl } from '../core.js';
+import { onChange, setFilter } from '../app.js';
+import { urutkanMenurutJarak, googleMapsUrl, filterTempat, waktuTempuhMenit, namaPeserta } from '../core.js';
 import { cariTempatNongkrong, RADIUS_KM } from '../data/overpass.js';
 import { map } from './map.js';
 
@@ -19,9 +19,17 @@ const PESAN_ERROR = {
 const section = document.getElementById('places');
 section.innerHTML = `
   <h2>Tempat Nongkrong</h2>
+  <div class="filter" role="group" aria-label="Filter jenis tempat">
+    <button type="button" data-filter="semua">Semua</button>
+    <button type="button" data-filter="kafe">Kafe</button>
+    <button type="button" data-filter="restoran">Restoran</button>
+  </div>
   <p class="places-status" role="status" aria-live="polite"></p>
+  <p class="waktu-catatan" hidden>Perkiraan waktu tempuh dari tiap Lokasi Rumah: perkiraan kasar, belum termasuk macet.</p>
   <button class="coba-lagi" type="button" hidden>Coba lagi</button>
   <ol class="places-list"></ol>`;
+const filterButtons = [...section.querySelectorAll('.filter button')];
+const catatan = section.querySelector('.waktu-catatan');
 const status = section.querySelector('.places-status');
 const cobaLagi = section.querySelector('.coba-lagi');
 const list = section.querySelector('.places-list');
@@ -35,6 +43,8 @@ let timer;
 let inFlight = false;
 let pausedUntil = 0;
 let highlighted = null;
+let fetched = null; // {places (sorted, with jarakKm), radiusKm} of the last search, null while none
+let state = null; // latest app state: filter and Peserta for the rows
 
 const jarak = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1).replace('.', ',')} km`);
 const textLabel = (text) => Object.assign(document.createElement('span'), { textContent: text });
@@ -50,6 +60,7 @@ function clear() {
   list.replaceChildren();
   shown.clear();
   highlighted = null;
+  catatan.hidden = true;
 }
 
 function schedule(ms) {
@@ -70,21 +81,30 @@ async function search() {
     return;
   }
   if (!result.ok) return show(PESAN_ERROR[result.error] ?? PESAN_ERROR.failed, { retry: true });
-  render(urutkanMenurutJarak(result.places, at), result.radiusKm);
+  fetched = { places: urutkanMenurutJarak(result.places, at), radiusKm: result.radiusKm };
+  render();
 }
 
-function render(places, radiusKm) {
-  if (!places.length) {
+// Rebuild status, rows and markers from the fetched places, the filter and the Peserta.
+function render() {
+  const keep = highlighted;
+  clear();
+  const { places: all, radiusKm } = fetched;
+  if (!all.length) {
     return show(`Belum ketemu kafe atau restoran dalam ${radiusKm} km dari Titik Tengah. Coba geser Lokasi Rumah.`);
   }
+  const places = filterTempat(all, state.filter);
   const lines = [];
   const step = RADIUS_KM.indexOf(radiusKm);
   if (step > 0) lines.push(`Tidak ada tempat dalam ${RADIUS_KM[step - 1]} km, menampilkan dalam ${radiusKm} km.`);
-  lines.push(places.length > MAX_SHOWN
+  if (!places.length) lines.push(`Tidak ada ${state.filter === 'kafe' ? 'kafe' : 'restoran'} dalam ${radiusKm} km. Coba pilih Semua.`);
+  else lines.push(places.length > MAX_SHOWN
     ? `${places.length} tempat dalam ${radiusKm} km, ${MAX_SHOWN} terdekat ditampilkan.`
     : `${places.length} tempat dalam ${radiusKm} km, terdekat di atas.`);
   show(lines.join(' '));
+  catatan.hidden = !places.length;
   places.slice(0, MAX_SHOWN).forEach((p) => addPlace(p));
+  if (shown.has(keep)) highlight(keep);
 }
 
 function addPlace(p) {
@@ -105,7 +125,15 @@ function addPlace(p) {
     textContent: 'Buka di Google Maps',
   });
   gmaps.setAttribute('aria-label', `Buka ${p.name} di Google Maps`);
-  li.append(pilih, gmaps);
+  const waktu = document.createElement('ul');
+  waktu.className = 'place-waktu';
+  state.peserta.forEach((ps, i) => {
+    if (!ps.lokasiRumah) return;
+    waktu.append(Object.assign(document.createElement('li'), {
+      textContent: `${namaPeserta(ps.name, i)}: ± ${waktuTempuhMenit(ps.lokasiRumah, p)} menit`,
+    }));
+  });
+  li.append(pilih, gmaps, waktu);
   list.append(li);
 
   const marker = L.circleMarker([p.lat, p.lon], style(p.type, false))
@@ -146,12 +174,23 @@ cobaLagi.addEventListener('click', () => {
   schedule(0);
 });
 
-onChange((state) => {
-  const t = state.titikTengah;
+filterButtons.forEach((b) => b.addEventListener('click', () => setFilter(b.dataset.filter)));
+
+let rowsKey = ''; // filter + Peserta names and homes: when it changes the rows are rebuilt
+onChange((next) => {
+  state = next;
+  filterButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === next.filter)));
+  const t = next.titikTengah;
   const k = t ? `${t.lat},${t.lon}` : '';
-  if (k === key) return; // name typing and other changes don't move the Titik Tengah
+  if (k === key) { // same Titik Tengah: no new search, but filter or Peserta may need new rows
+    const rk = JSON.stringify([next.filter, next.peserta.map((p) => [p.name, p.lokasiRumah])]);
+    if (rk !== rowsKey && fetched) { rowsKey = rk; render(); }
+    return;
+  }
+  rowsKey = '';
   key = k;
   titik = t;
+  fetched = null;
   seq++;
   clearTimeout(timer);
   clear(); // the old list's distances no longer match the new Titik Tengah

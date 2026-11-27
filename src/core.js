@@ -37,3 +37,16 @@ export const urutkanMenurutJarak = (places, titik) =>
 
 // Plain Google Maps link to a point (no API key).
 export const googleMapsUrl = ({ lat, lon }) => `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+
+// Perkiraan Waktu Tempuh: straight-line distance x road factor / average city speed.
+export const ROAD_FACTOR = 1.4; // roads wind, so the real way is ~40% longer than a straight line
+export const SPEED_KMH = 20; // rough average city speed, traffic not counted
+
+// Whole minutes from `dari` to `ke` ({lat, lon} each).
+export const waktuTempuhMenit = (dari, ke) => Math.round(((haversineKm(dari, ke) * ROAD_FACTOR) / SPEED_KMH) * 60);
+
+// Filter button value -> place type; "semua" keeps everything.
+export const FILTER_TYPE = { semua: null, kafe: 'cafe', restoran: 'restaurant' };
+
+export const filterTempat = (places, filter) =>
+  FILTER_TYPE[filter] ? places.filter((p) => p.type === FILTER_TYPE[filter]) : places;

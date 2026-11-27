@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta } from '../src/core.js';
+import { titikTengah, haversineKm, canAddPeserta, canRemovePeserta, namaPeserta, waktuTempuhMenit, filterTempat, ROAD_FACTOR, SPEED_KMH } from '../src/core.js';
 
 test('Titik Tengah of 2 Lokasi Rumah is the average of their lat and lon', () => {
   const tt = titikTengah([{ lat: -6.1, lon: 106.8 }, { lat: -6.3, lon: 106.9 }]);
@@ -52,4 +52,29 @@ test('a Peserta without a name is shown as "Orang N" by 1-based position', () =>
 
 test('a Peserta with a name is shown by that name, trimmed', () => {
   assert.equal(namaPeserta('  Budi ', 2), 'Budi');
+});
+
+test('Perkiraan Waktu Tempuh is distance x road factor / speed, in whole minutes', () => {
+  const monas = { lat: -6.1754, lon: 106.8272 };
+  const blokM = { lat: -6.2443, lon: 106.7983 };
+  // 8.30 km x 1.4 / 20 km/h = 34.8 min
+  assert.equal(waktuTempuhMenit(monas, blokM), 35);
+  assert.equal(waktuTempuhMenit(monas, monas), 0);
+  assert.equal(ROAD_FACTOR, 1.4);
+  assert.equal(SPEED_KMH, 20);
+});
+
+test('Perkiraan Waktu Tempuh rounds to the nearest minute', () => {
+  const a = { lat: 0, lon: 0 };
+  // 1 km straight = 1.4 / 20 h = 4.2 min -> 4; 1.2 km = 5.04 -> 5
+  const east = (km) => ({ lat: 0, lon: km / 111.195 });
+  assert.equal(waktuTempuhMenit(a, east(1)), 4);
+  assert.equal(waktuTempuhMenit(a, east(1.2)), 5);
+});
+
+test('filterTempat keeps all, only cafes, or only restaurants', () => {
+  const places = [{ id: 1, type: 'cafe' }, { id: 2, type: 'restaurant' }, { id: 3, type: 'cafe' }];
+  assert.deepEqual(filterTempat(places, 'semua').map((p) => p.id), [1, 2, 3]);
+  assert.deepEqual(filterTempat(places, 'kafe').map((p) => p.id), [1, 3]);
+  assert.deepEqual(filterTempat(places, 'restoran').map((p) => p.id), [2]);
 });

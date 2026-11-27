@@ -50,3 +50,21 @@
   max-width: 7.5em;
   padding: 4px 0;
 }
+
+.filter { display: flex; gap: 8px; margin-bottom: 8px; }
+.filter button { flex: 1; font-weight: 600; }
+.filter button[aria-pressed="true"] { background: #1f2933; border-color: #1f2933; color: #fff; }
+
+.waktu-catatan { margin: 0 0 8px; font-size: 0.85rem; color: #52606d; }
+.place-waktu {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 0.85rem;
+  color: #323f4b;
+}
+.place-waktu li { overflow-wrap: anywhere; }

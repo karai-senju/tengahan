@@ -1,7 +1,7 @@
 // App state: the Peserta list, the selected Peserta and the Titik Tengah. No DOM.
 // Features subscribe with onChange(listener); listeners get the current state
 // right away and after every change. Treat the state as read-only.
-import { MIN_PESERTA, canAddPeserta, canRemovePeserta, titikTengah } from './core.js';
+import { FILTER_TYPE, MIN_PESERTA, canAddPeserta, canRemovePeserta, titikTengah } from './core.js';
 
 export function createApp() {
   let nextId = 1;
@@ -12,6 +12,7 @@ export function createApp() {
     selectedId: null,
     titikTengah: null,
     tapTargetId: null, // Peserta the next map tap fills, or null when nobody can be filled
+    filter: 'semua', // Tempat Nongkrong filter: 'semua' | 'kafe' | 'restoran'
     tapMissed: false, // true right after a map tap that had nobody to fill
   };
 
@@ -65,7 +66,13 @@ export function createApp() {
     return true;
   }
 
-  return { onChange, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap };
+  function setFilter(filter) {
+    if (!(filter in FILTER_TYPE) || filter === state.filter) return;
+    state.filter = filter;
+    listeners.forEach((listener) => listener(state));
+  }
+
+  return { onChange, setFilter, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap };
 }
 
-export const { onChange, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap } = createApp();
+export const { onChange, setFilter, addPeserta, removePeserta, setName, setLokasiRumah, selectPeserta, tapMap } = createApp();

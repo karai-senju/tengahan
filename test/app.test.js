@@ -95,3 +95,13 @@ test('typing a name sets the Peserta name', () => {
   app.setName(state().peserta[0].id, 'Budi');
   assert.equal(state().peserta[0].name, 'Budi');
 });
+
+test('the filter starts at "semua", changes through setFilter and ignores unknown values', () => {
+  const app = createApp();
+  const state = watch(app);
+  assert.equal(state().filter, 'semua');
+  app.setFilter('kafe');
+  assert.equal(state().filter, 'kafe');
+  app.setFilter('mall');
+  assert.equal(state().filter, 'kafe');
+});
